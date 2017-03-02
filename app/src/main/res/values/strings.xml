@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Popular Movies</string>
+    <string name="popular">Popularity</string>
+    <string name="top_rated">Top Rated</string>
+    <string name="error_message">
+        An error has occurred. Please try again enable your internet connection and click on
+        POPULARITY or TOP RATED
+    </string>
+    <string name="action_refresh">Refresh</string>
+</resources>
