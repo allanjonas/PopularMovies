@@ -2,12 +2,12 @@ package com.example.allanjonas.popularmovies;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
@@ -39,9 +39,13 @@ public class MovieAdapter extends
         @Override
         public void onClick(View v) {
             int adapterPosition = getAdapterPosition();
-            Movie movie = movies.get(adapterPosition);
-            mClickHandler.onClick(movie);
-
+            if (!movies.isEmpty()) {
+                Movie movie = movies.get(adapterPosition);
+                mClickHandler.onClick(movie);
+            } else {
+                Toast.makeText((MainActivity)mClickHandler, R.string.error_toast_click_movie,
+                        Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -75,7 +79,11 @@ public class MovieAdapter extends
 
     @Override
     public void onBindViewHolder(MovieHolder movieViewHolder, int position) {
-        Picasso.with((MainActivity)mClickHandler).load(movies.get(position).getmPoster()).into(movieViewHolder.movie_poster);
+        Picasso.with((MainActivity)mClickHandler)
+                .load(movies.get(position).getmPoster())
+                .placeholder(R.drawable.placeholder)
+                .error(R.drawable.error)
+                .into(movieViewHolder.movie_poster);
     }
 }
 

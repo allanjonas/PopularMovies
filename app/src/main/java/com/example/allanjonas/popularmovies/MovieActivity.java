@@ -8,38 +8,42 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 /**
  * Created by allanjonas on 2017-02-28.
  */
 
 public class MovieActivity extends AppCompatActivity {
 
-    private ImageView mPoster;
-    private TextView mOverView;
-    private TextView mUserRating;
-    private TextView mReleaseDate;
+    @BindView(R.id.poster_iv) ImageView mPoster;
+    @BindView(R.id.overview_tv)TextView mOverView;
+    @BindView(R.id.user_rating_tv)TextView mUserRating;
+    @BindView(R.id.release_date_tv)TextView mReleaseDate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.movie_detail);
-        mPoster = (ImageView) findViewById(R.id.poster_iv);
-        mOverView = (TextView) findViewById(R.id.overview_tv);
-        mUserRating = (TextView) findViewById(R.id.user_rating_tv);
-        mReleaseDate = (TextView) findViewById(R.id.release_date_tv);
+        ButterKnife.bind(this);
 
         Intent intent = getIntent();
 
         if(intent.hasExtra("movie")) {
             Movie movie = intent.getParcelableExtra("movie");
             if(movie == null) {
-                mReleaseDate.setText("Something went wrong try again");
+                mReleaseDate.setText(getString(R.string.error_movie_activity));
             } else {
                 getSupportActionBar().setTitle(movie.getmTitle());
-                Picasso.with(this).load(movie.getmPoster()).into(mPoster);
+                Picasso.with(this)
+                        .load(movie.getmPoster())
+                        .placeholder(R.drawable.placeholder)
+                        .error(R.drawable.error)
+                        .into(mPoster);
                 mOverView.setText(movie.getmOverview());
-                mUserRating.setText("Average Vote: " + movie.getmVoteAverage() + "/10");
-                mReleaseDate.setText("Release date: " + movie.getmReleaseDate());
+                mUserRating.setText(getString(R.string.avr_vote_movie_activity) + Double.toString(movie.getmVoteAverage()) + getString(R.string.out_of_10));
+                mReleaseDate.setText(getString(R.string.release_date_movie_activity) + movie.getmReleaseDate());
 
             }
         }

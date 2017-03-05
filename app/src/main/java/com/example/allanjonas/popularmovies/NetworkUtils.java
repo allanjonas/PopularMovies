@@ -20,7 +20,7 @@ public final class NetworkUtils {
     private static String BASE_URL = "http://api.themoviedb.org/3/movie/";
     private static String PAGE_PARM = "page";
     private static String API_KEY_PARM = "api_key";
-    private static String API_KEY = "<API_KEY>";
+    private static String API_KEY = BuildConfig.API_KEY;
 
     public static URL buildUrl(String sortQuery, String pageQuery) {
         Uri builtUri = Uri.parse(BASE_URL + sortQuery).buildUpon()

@@ -6,5 +6,10 @@
         An error has occurred. Please try again enable your internet connection and click on
         POPULARITY or TOP RATED
     </string>
+    <string name="error_movie_activity">Something went wrong, try again!</string>
+    <string name="avr_vote_movie_activity">Average vote: </string>
+    <string name="out_of_10">/10</string>
+    <string name="release_date_movie_activity">Release date: </string>
     <string name="action_refresh">Refresh</string>
+    <string name="error_toast_click_movie"> Movie could not be loaded, check your internet connection and try refresh! </string>
 </resources>

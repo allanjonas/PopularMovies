@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
         mErrorMessageDisplay = (TextView) findViewById(R.id.tv_error_message_display);
 
-        final GridLayoutManager gridLayout = new GridLayoutManager(MainActivity.this, 3);
+        final GridLayoutManager gridLayout = new GridLayoutManager(MainActivity.this, calculateNoOfColumns(this));
         mRecyclerView.setLayoutManager(gridLayout);
         mRecyclerView.setHasFixedSize(true);
 
@@ -83,6 +84,13 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
         mLoadingIndicator = (ProgressBar) findViewById(R.id.pb_loading_indicator);
         loadMovieData(nextPage, sortChoice);
+    }
+
+    public static int calculateNoOfColumns(Context context) {
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+        float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
+        int noOfColumns = (int) (dpWidth / 120);
+        return noOfColumns;
     }
 
     /**
@@ -217,7 +225,6 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         int id = item.getItemId();
         resetMovieData();
         resetScroll();
-        Log.d("rest", "onOptionsItemSelected: reset");
 
         if (id == R.id.action_popularity) {
             sortChoice = CHOICE_POPULAR;
