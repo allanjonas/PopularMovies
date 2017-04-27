@@ -24,6 +24,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".MainActivity" />
         </activity>
+        <provider
+            android:authorities="com.example.allanjonas.popularmovies"
+            android:name="com.example.allanjonas.popularmovies.data.MovieContentProvider"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -2,7 +2,11 @@ package com.example.allanjonas.popularmovies;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Parcelable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -16,6 +20,9 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.example.allanjonas.popularmovies.data.MovieContract;
+import com.example.allanjonas.popularmovies.data.MovieDbHelper;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -27,6 +34,11 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements MovieAdapter.MovieAdapterOnClickHandler{
     private static String CHOICE_POPULAR = "popular/";
     private static String CHOICE_TOP_RATED = "top_rated/";
+    private static String CHOICE_FAVORITES = "favorites";
+    private static String BUNDLE_LAYOUT = "mainLayout";
+    private static String BUNDLE_MOVIELIST = "movieList";
+    private static String BUNDLE_NEXTPAGE = "nextPage";
+    private static String BUNDLE_SORTING = "sort";
     private RecyclerView mRecyclerView;
     private MovieAdapter mMovieAdapter;
     private String sortChoice = CHOICE_POPULAR;
@@ -35,23 +47,42 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
     private boolean loading = true;
     private int visibleThreshold = 5;
     int firstVisibleItem, visibleItemCount, totalItemCount;
-
     private TextView mErrorMessageDisplay;
-
     private ProgressBar mLoadingIndicator;
 
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putParcelable(BUNDLE_LAYOUT, mRecyclerView.getLayoutManager().onSaveInstanceState());
+        outState.putParcelableArrayList(BUNDLE_MOVIELIST, mMovieAdapter.getMovieData());
+        outState.putInt(BUNDLE_NEXTPAGE, nextPage);
+        outState.putString(BUNDLE_SORTING, sortChoice);
+        super.onSaveInstanceState(outState);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mRecyclerView = (RecyclerView)findViewById(R.id.movie_rv);
-
         mErrorMessageDisplay = (TextView) findViewById(R.id.tv_error_message_display);
+        mLoadingIndicator = (ProgressBar) findViewById(R.id.pb_loading_indicator);
 
-        final GridLayoutManager gridLayout = new GridLayoutManager(MainActivity.this, calculateNoOfColumns(this));
+        final GridLayoutManager gridLayout = new GridLayoutManager(MainActivity.this, calculateNoOfColumns(this, getResources().getInteger(R.integer.movie_poster_divider)));
         mRecyclerView.setLayoutManager(gridLayout);
         mRecyclerView.setHasFixedSize(true);
+
+        mMovieAdapter = new MovieAdapter(this);
+        mRecyclerView.setAdapter(mMovieAdapter);
+
+        if(savedInstanceState == null){
+            loadMovieData(nextPage, sortChoice);
+        }else {
+            Parcelable savedRecyclerViewState = savedInstanceState.getBundle(BUNDLE_LAYOUT);
+            mRecyclerView.getLayoutManager().onRestoreInstanceState(savedRecyclerViewState);
+            mMovieAdapter.setMovieData(savedInstanceState.<Movie>getParcelableArrayList(BUNDLE_MOVIELIST));
+            nextPage = savedInstanceState.getInt(BUNDLE_NEXTPAGE);
+            sortChoice = savedInstanceState.getString(BUNDLE_SORTING);
+        }
 
         // For dynamic scrolling of content
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener()
@@ -71,7 +102,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
                     }
                 }
                 if (!loading && (totalItemCount - visibleItemCount)
-                        <= (firstVisibleItem + visibleThreshold)) {
+                        <= (firstVisibleItem + visibleThreshold) &&
+                        sortChoice != CHOICE_FAVORITES) {
 
                     loadMovieData(nextPage, sortChoice);
                     loading = true;
@@ -79,17 +111,21 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
             }
         });
 
-        mMovieAdapter = new MovieAdapter(this);
-        mRecyclerView.setAdapter(mMovieAdapter);
-
-        mLoadingIndicator = (ProgressBar) findViewById(R.id.pb_loading_indicator);
-        loadMovieData(nextPage, sortChoice);
     }
 
-    public static int calculateNoOfColumns(Context context) {
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(sortChoice == CHOICE_FAVORITES) {
+            resetMovieData();
+            loadFavorites();
+        }
+    }
+
+    public static int calculateNoOfColumns(Context context, int width) {
         DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
         float dpWidth = displayMetrics.widthPixels / displayMetrics.density;
-        int noOfColumns = (int) (dpWidth / 120);
+        int noOfColumns = (int) (dpWidth / width);
         return noOfColumns;
     }
 
@@ -102,6 +138,22 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         showMovieDataView();
         new FetchMovieTask().execute(sort, page.toString());
         nextPage++;
+    }
+
+    private void loadFavorites() {
+        showMovieDataView();
+        ArrayList<Movie> movieList = new ArrayList<>();
+        Uri movies = MovieContract.MovieEntry.CONTENT_URI;
+        Cursor cursor = getContentResolver().query(movies, null, null, null, null);
+        if (cursor.moveToFirst()) {
+            do {
+                Movie movie = new Movie(cursor.getString(0), cursor.getString(1),
+                        cursor.getString(2), cursor.getString(3),
+                        Double.parseDouble(cursor.getString(4)), cursor.getString(5));
+                movieList.add(movie);
+            } while (cursor.moveToNext());
+            mMovieAdapter.setMovieData(movieList);
+        }
     }
 
     /**
@@ -174,7 +226,7 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
 
             String sortMethod = params[0];
             String page = params[1];
-            URL movieRequestUrl = NetworkUtils.buildUrl(sortMethod, page);
+            URL movieRequestUrl = NetworkUtils.buildSortUrl(sortMethod, page);
             try {
                 ArrayList<Movie> movies = new ArrayList<Movie>();
                 String jsonMovieResponse = NetworkUtils
@@ -189,7 +241,8 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
                     String overview = jsonMovie.getString("overview");
                     double voteAverage = jsonMovie.getDouble("vote_average");
                     String releaseDate = jsonMovie.getString("release_date");
-                    movies.add(new Movie(title, poster, overview, voteAverage, releaseDate));
+                    int id = jsonMovie.getInt("id");
+                    movies.add(new Movie(Integer.toString(id),title, poster, overview, voteAverage, releaseDate));
 
                 }
 
@@ -234,6 +287,10 @@ public class MainActivity extends AppCompatActivity implements MovieAdapter.Movi
         if(id == R.id.action_toprated) {
             sortChoice = CHOICE_TOP_RATED;
             loadMovieData(nextPage, sortChoice);
+        }
+        if(id == R.id.action_favorites) {
+            sortChoice = CHOICE_FAVORITES;
+            loadFavorites();
         }
         return super.onOptionsItemSelected(item);
     }

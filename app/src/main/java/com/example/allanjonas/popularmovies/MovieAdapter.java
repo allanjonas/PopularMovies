@@ -65,9 +65,10 @@ public class MovieAdapter extends
 
     public void resetMovieData(){
         movies = new ArrayList<Movie>();
+        notifyDataSetChanged();
     }
 
-
+    public ArrayList<Movie> getMovieData() { return movies; }
 
     @Override
     public MovieHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {

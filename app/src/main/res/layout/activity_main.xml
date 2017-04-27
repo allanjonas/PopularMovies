@@ -2,10 +2,11 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main"
-    android:layout_width="match_parent"
+    android:layout_width="wrap_content"
     android:layout_height="match_parent"
     android:background="@color/colorPrimaryDark"
     android:fitsSystemWindows="true"
+    android:layout_gravity="center"
     tools:context="com.example.allanjonas.popularmovies.MainActivity">
 
     <ProgressBar
@@ -18,6 +19,8 @@
     <android.support.v7.widget.RecyclerView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_gravity="center"
+
         android:id="@+id/movie_rv" />
 
     <TextView

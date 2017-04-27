@@ -19,12 +19,41 @@ public final class NetworkUtils {
 
     private static String BASE_URL = "http://api.themoviedb.org/3/movie/";
     private static String PAGE_PARM = "page";
+    private static String REVIEW_PARM = "reviews";
+    private static String TRAILER_PARM = "videos";
     private static String API_KEY_PARM = "api_key";
     private static String API_KEY = BuildConfig.API_KEY;
 
-    public static URL buildUrl(String sortQuery, String pageQuery) {
+
+
+    public static URL buildReviewUrl(String movieID){
+        return buildUrl(movieID, REVIEW_PARM);
+    }
+
+    public static URL buildTrailerUrl(String movieID){
+        return buildUrl(movieID, TRAILER_PARM);
+    }
+
+    public static URL buildSortUrl(String sortQuery, String pageQuery) {
         Uri builtUri = Uri.parse(BASE_URL + sortQuery).buildUpon()
                 .appendQueryParameter(PAGE_PARM, pageQuery)
+                .appendQueryParameter(API_KEY_PARM, API_KEY)
+                .build();
+
+        URL url = null;
+        try {
+            url = new URL(builtUri.toString());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        Log.v(TAG, "Built URI " + url);
+
+        return url;
+    }
+
+    public static URL buildUrl(String first, String sec) {
+        Uri builtUri = Uri.parse(BASE_URL + first + "/" + sec).buildUpon()
                 .appendQueryParameter(API_KEY_PARM, API_KEY)
                 .build();
 
